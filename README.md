@@ -15,13 +15,12 @@
 비공개 저장소이므로 받는 컴퓨터의 git이 GitHub에 로그인되어 있어야 합니다  
 이 맥은 `gh auth login`으로 로그인해 두었고, git이 https로 접속할 때 `gh`의 로그인 정보를 씁니다
 
-```json
-"dependencies": {
-  "@yonggipo/repo-providers": "git+https://github.com/yonggipo/repo-providers.git#v0.1.0"
-}
+```sh
+npm install "@yonggipo/repo-providers@git+https://github.com/yonggipo/repo-providers.git#v0.1.1"
 ```
 
-`github:yonggipo/repo-providers` 같은 짧은 주소는 SSH로 먼저 접속하므로, SSH 키를 GitHub에 등록하지 않은 컴퓨터에서는 https 주소를 씁니다
+npm은 `package.json`에 `github:yonggipo/repo-providers#v0.1.1`로 줄여 적고, 받을 때 SSH로 먼저 접속한 뒤 실패하면 https로 다시 받습니다  
+그래서 SSH 키를 GitHub에 등록하지 않은 이 맥에서도 받아 집니다
 
 ```ts
 import { BitbucketApiClient, syncRepo } from "@yonggipo/repo-providers";
@@ -41,7 +40,7 @@ npm version patch -m "🔖 release: v%s"    # 빌드하고, 버전을 올리고,
 git push --follow-tags
 ```
 
-받는 쪽은 `package.json`의 `#v0.1.0`을 새 태그로 바꾸고 `npm install`을 합니다  
+받는 쪽은 위 설치 명령을 새 태그로 다시 실행합니다, `package.json`의 태그만 고치면 잠금 파일이 예전 커밋을 그대로 가리킵니다  
 태그를 바꾸기 전까지는 예전 버전을 그대로 씁니다
 
 패키지를 고치면서 받는 쪽에서 바로 시험하려면, 받는 쪽 폴더에서 `npm link ../repo-providers`로 이 폴더를 잠시 겁니다  
