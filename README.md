@@ -30,13 +30,14 @@ import { BitbucketApiClient, syncRepo } from "@yonggipo/repo-providers";
 ## 빌드
 
 Node는 `node_modules` 안의 `.ts` 파일을 실행하지 않으므로 `dist/`에 JavaScript로 빌드해서 내보냅니다  
-npm은 git 주소로 받은 패키지의 `prepare` 스크립트를 설치할 때 실행하므로, 받는 쪽에서 따로 빌드하지 않습니다
+`api-doc-agent`처럼 `.npmrc`에 `ignore-scripts=true`를 둔 저장소는 설치할 때 패키지 쪽 빌드 스크립트를 실행하지 않으므로, 빌드한 `dist/`를 이 저장소에 함께 커밋합니다  
+`npm version`이 `version` 스크립트로 먼저 빌드하고 `dist/`를 버전 커밋에 넣으므로 손으로 빌드하지 않습니다
 
 ## 새 버전 내기
 
 ```sh
 npm run typecheck && npm test
-npm version patch        # package.json 버전을 올리고 v0.1.1 같은 태그를 만듭니다
+npm version patch -m "🔖 release: v%s"    # 빌드하고, 버전을 올리고, v0.1.1 같은 태그를 만듭니다
 git push --follow-tags
 ```
 
