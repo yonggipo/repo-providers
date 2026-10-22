@@ -1,0 +1,52 @@
+# repo-providers
+
+저장소 서비스(Bitbucket, GitHub)에 연결하는 코드를 `auto-qa-agent`와 `api-doc-agent`가 함께 쓰려고 만든 개인 패키지입니다  
+지금은 Bitbucket 연결부만 있습니다
+
+## 들어 있는 것
+
+- **`RepoProvider`**: 저장소 서비스마다 구현하는 공통 약속
+- **`BitbucketApiClient`**: Bitbucket Cloud API로 계정, 워크스페이스, 레포, 브랜치를 조회하고 git 인증 환경변수를 만듭니다
+- **`loadBitbucketCredentials`**: 맥 키체인에서 Bitbucket 토큰을 읽습니다, 앱이 저장한 항목을 먼저 보고 없으면 공용 항목 `bitbucket-api-token`을 읽습니다
+- **`syncRepo`**: 레포를 정한 폴더에 clone하고, 이미 있으면 원격 브랜치의 최신 상태로 맞춥니다
+
+## 설치
+
+비공개 저장소이므로 받는 컴퓨터의 git이 GitHub에 로그인되어 있어야 합니다  
+이 맥은 `gh auth login`으로 로그인해 두었고, git이 https로 접속할 때 `gh`의 로그인 정보를 씁니다
+
+```json
+"dependencies": {
+  "@yonggipo/repo-providers": "git+https://github.com/yonggipo/repo-providers.git#v0.1.0"
+}
+```
+
+`github:yonggipo/repo-providers` 같은 짧은 주소는 SSH로 먼저 접속하므로, SSH 키를 GitHub에 등록하지 않은 컴퓨터에서는 https 주소를 씁니다
+
+```ts
+import { BitbucketApiClient, syncRepo } from "@yonggipo/repo-providers";
+```
+
+## 빌드
+
+Node는 `node_modules` 안의 `.ts` 파일을 실행하지 않으므로 `dist/`에 JavaScript로 빌드해서 내보냅니다  
+npm은 git 주소로 받은 패키지의 `prepare` 스크립트를 설치할 때 실행하므로, 받는 쪽에서 따로 빌드하지 않습니다
+
+## 새 버전 내기
+
+```sh
+npm run typecheck && npm test
+npm version patch        # package.json 버전을 올리고 v0.1.1 같은 태그를 만듭니다
+git push --follow-tags
+```
+
+받는 쪽은 `package.json`의 `#v0.1.0`을 새 태그로 바꾸고 `npm install`을 합니다  
+태그를 바꾸기 전까지는 예전 버전을 그대로 씁니다
+
+패키지를 고치면서 받는 쪽에서 바로 시험하려면, 받는 쪽 폴더에서 `npm link ../repo-providers`로 이 폴더를 잠시 겁니다  
+링크로 걸면 `dist/`를 읽으므로 고친 뒤 `npm run build`를 다시 합니다, 시험이 끝나면 `npm install`로 되돌립니다
+
+## 코드 규칙
+
+`auto-qa-agent`에서 옮겨 온 코드라 그 저장소의 `docs/code-conventions.md`를 따릅니다  
+테스트는 실제 코드 옆에 `<파일 이름>.test.ts`로 둡니다
