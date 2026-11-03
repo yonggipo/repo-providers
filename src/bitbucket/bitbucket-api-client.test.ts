@@ -58,3 +58,127 @@ test("401 응답은 상태 코드를 담은 BitbucketApiError 로 던진다", as
 
   await assert.rejects(client.currentUserName(), (err) => err instanceof BitbucketApiError && err.status === 401);
 });
+
+// MARK: - PR
+
+const PRS = `${API}/repositories/team/docs/pullrequests`;
+const openQuery = `${PRS}?q=${encodeURIComponent('source.branch.name="api-doc-cli/update" AND state="OPEN"')}`;
+const members = {
+  values: [
+    { user: { uuid: "{me}", nickname: "me" } },
+    { user: { uuid: "{kim}", nickname: "kim", display_name: "김리뷰" } },
+  ],
+};
+const prRequest = {
+  repo: "team/docs",
+  source: "api-doc-cli/update",
+  destination: "main",
+  title: "제목",
+  description: "본문",
+  reviewers: ["kim", "me"],
+};
+
+// 같은 주소라도 메서드마다 다른 응답을 주는 가짜 fetch, 키는 `메서드 주소`
+// 값이 숫자면 그 상태 코드로 실패 응답을 준다
+function methodFetch(routes: Record<string, unknown>, seen: Request[]): typeof fetch {
+  return (async (url: string | URL | Request, init?: RequestInit) => {
+    const request = new Request(url, init);
+    seen.push(request);
+    const body = routes[`${request.method} ${request.url}`];
+    if (body === undefined) return new Response("not found", { status: 404 });
+    if (typeof body === "number") return new Response("denied", { status: body });
+    return new Response(JSON.stringify(body), { status: 200 });
+  }) as typeof fetch;
+}
+
+test("열린 PR 이 없으면 리뷰어를 uuid 로 바꿔 새 PR 을 만들고, PR 을 여는 계정은 리뷰어에서 뺀다", async () => {
+  const seen: Request[] = [];
+  const client = new BitbucketApiClient(
+    credentials,
+    methodFetch(
+      {
+        [`GET ${API}/user`]: { uuid: "{me}" },
+        [`GET ${API}/workspaces/team/members?pagelen=100`]: members,
+        [`GET ${openQuery}`]: { values: [] },
+        [`POST ${PRS}`]: { id: 7, links: { html: { href: "https://bitbucket.org/team/docs/pull-requests/7" } } },
+      },
+      seen,
+    ),
+  );
+
+  const result = await client.openPullRequest(prRequest);
+  assert.deepEqual(result, { id: 7, url: "https://bitbucket.org/team/docs/pull-requests/7", created: true, skippedReviewers: ["me"] });
+  const post = seen.find((r) => r.method === "POST")!;
+  const sent = await post.json();
+  assert.deepEqual(sent.reviewers, [{ uuid: "{kim}" }]);
+  assert.equal(sent.close_source_branch, true);
+  assert.equal(sent.source.branch.name, "api-doc-cli/update");
+  assert.equal(sent.destination.branch.name, "main");
+});
+
+test("같은 브랜치의 열린 PR 이 있으면 새로 만들지 않고 그 PR 을 고친다", async () => {
+  const seen: Request[] = [];
+  const client = new BitbucketApiClient(
+    credentials,
+    methodFetch(
+      {
+        [`GET ${API}/user`]: { uuid: "{me}" },
+        [`GET ${API}/workspaces/team/members?pagelen=100`]: members,
+        [`GET ${openQuery}`]: { values: [{ id: 3 }] },
+        [`PUT ${PRS}/3`]: { id: 3, links: { html: { href: "https://bitbucket.org/team/docs/pull-requests/3" } } },
+      },
+      seen,
+    ),
+  );
+
+  const result = await client.openPullRequest(prRequest);
+  assert.equal(result.created, false);
+  assert.equal(result.id, 3);
+  assert.ok(!seen.some((r) => r.method === "POST"));
+});
+
+test("찾지 못한 리뷰어가 있으면 PR 을 만들거나 고치지 않고 던진다", async () => {
+  const seen: Request[] = [];
+  const client = new BitbucketApiClient(
+    credentials,
+    methodFetch(
+      {
+        [`GET ${API}/user`]: { uuid: "{me}" },
+        [`GET ${API}/workspaces/team/members?pagelen=100`]: members,
+      },
+      seen,
+    ),
+  );
+
+  await assert.rejects(client.openPullRequest({ ...prRequest, reviewers: ["park"] }), /park/);
+  assert.ok(!seen.some((r) => r.method !== "GET"));
+});
+
+test("리뷰어를 사용자 ID 로만 적으면 멤버를 조회하지 않고, 계정 읽기 권한이 없어도 PR 을 연다", async () => {
+  const seen: Request[] = [];
+  const client = new BitbucketApiClient(
+    credentials,
+    methodFetch(
+      {
+        [`GET ${API}/user`]: 403,
+        [`GET ${openQuery}`]: { values: [] },
+        [`POST ${PRS}`]: { id: 8, links: { html: { href: "https://bitbucket.org/team/docs/pull-requests/8" } } },
+      },
+      seen,
+    ),
+  );
+
+  const result = await client.openPullRequest({ ...prRequest, reviewers: ["{0b6c}", "557058:ab12"] });
+  assert.equal(result.created, true);
+  assert.ok(!seen.some((r) => r.url.includes("/members")));
+  const sent = await seen.find((r) => r.method === "POST")!.json();
+  assert.deepEqual(sent.reviewers, [{ uuid: "{0b6c}" }, { account_id: "557058:ab12" }]);
+});
+
+test("이름으로 적었는데 멤버를 읽을 권한이 없으면 필요한 권한을 알려 주며 멈춘다", async () => {
+  const client = new BitbucketApiClient(
+    credentials,
+    methodFetch({ [`GET ${API}/user`]: 403, [`GET ${API}/workspaces/team/members?pagelen=100`]: 403 }, []),
+  );
+  await assert.rejects(client.openPullRequest(prRequest), /read:workspace/);
+});

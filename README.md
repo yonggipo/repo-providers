@@ -1,12 +1,15 @@
 # repo-providers
 
-저장소 서비스(Bitbucket, GitHub)에 연결하는 코드를 `auto-qa-agent`와 `api-doc-agent`가 함께 쓰려고 만든 개인 패키지입니다  
+저장소 서비스(Bitbucket, GitHub)에 연결하는 코드를 `auto-qa-agent`와 `api-doc-cli`가 함께 쓰려고 만든 개인 패키지입니다  
 지금은 Bitbucket 연결부만 있습니다
 
 ## 들어 있는 것
 
 - **`RepoProvider`**: 저장소 서비스마다 구현하는 공통 약속
-- **`BitbucketApiClient`**: Bitbucket Cloud API로 계정, 워크스페이스, 레포, 브랜치를 조회하고 git 인증 환경변수를 만듭니다
+- **`BitbucketApiClient`**: Bitbucket Cloud API로 계정, 워크스페이스, 레포, 브랜치를 조회하고 git 인증 환경변수를 만듭니다  
+  `openPullRequest`는 PR을 열고, 같은 브랜치의 열린 PR이 있으면 그 PR의 제목, 본문, 리뷰어를 바꿉니다  
+  리뷰어는 `{uuid}`나 `account_id`로 적거나, 워크스페이스 멤버의 닉네임이나 표시 이름으로 적습니다, 찾지 못한 이름이 있으면 PR을 열지 않고 멈춥니다  
+  이름으로 적으면 멤버를 조회하므로 토큰에 `read:workspace` 권한이 필요하고, PR을 여는 계정을 리뷰어에서 빼려면 계정 읽기 권한이 필요합니다
 - **`loadBitbucketCredentials`**: 맥 키체인에서 Bitbucket 토큰을 읽습니다, 앱이 저장한 항목을 먼저 보고 없으면 공용 항목 `bitbucket-api-token`을 읽습니다
 - **`syncRepo`**: 레포를 정한 폴더에 clone하고, 이미 있으면 원격 브랜치의 최신 상태로 맞춥니다
 
@@ -29,7 +32,7 @@ import { BitbucketApiClient, syncRepo } from "@yonggipo/repo-providers";
 ## 빌드
 
 Node는 `node_modules` 안의 `.ts` 파일을 실행하지 않으므로 `dist/`에 JavaScript로 빌드해서 내보냅니다  
-`api-doc-agent`처럼 `.npmrc`에 `ignore-scripts=true`를 둔 저장소는 설치할 때 패키지 쪽 빌드 스크립트를 실행하지 않으므로, 빌드한 `dist/`를 이 저장소에 함께 커밋합니다  
+`api-doc-cli`처럼 `.npmrc`에 `ignore-scripts=true`를 둔 저장소는 설치할 때 패키지 쪽 빌드 스크립트를 실행하지 않으므로, 빌드한 `dist/`를 이 저장소에 함께 커밋합니다  
 `npm version`이 `version` 스크립트로 먼저 빌드하고 `dist/`를 버전 커밋에 넣으므로 손으로 빌드하지 않습니다
 
 ## 새 버전 내기

@@ -17,4 +17,19 @@ export interface RepoProvider {
     listRepos(owner: string): Promise<Repo[]>;
     listBranches(repo: Repo): Promise<string[]>;
     gitAuthEnv(): NodeJS.ProcessEnv;
+    openPullRequest(request: PullRequestRequest): Promise<PullRequestResult>;
+}
+export interface PullRequestRequest {
+    repo: string;
+    source: string;
+    destination: string;
+    title: string;
+    description: string;
+    reviewers: string[];
+}
+export interface PullRequestResult {
+    id: number;
+    url: string;
+    created: boolean;
+    skippedReviewers: string[];
 }

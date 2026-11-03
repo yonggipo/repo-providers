@@ -1,4 +1,4 @@
-import type { Repo, RepoProvider } from "../repo-provider.ts";
+import type { PullRequestRequest, PullRequestResult, Repo, RepoProvider } from "../repo-provider.ts";
 import type { BitbucketCredentials } from "./bitbucket-credential-store.ts";
 export declare class BitbucketApiClient implements RepoProvider {
     readonly id = "bitbucket";
@@ -10,6 +10,10 @@ export declare class BitbucketApiClient implements RepoProvider {
     listRepos(workspace: string): Promise<Repo[]>;
     listBranches(repo: Repo): Promise<string[]>;
     gitAuthEnv(): NodeJS.ProcessEnv;
+    openPullRequest(request: PullRequestRequest): Promise<PullRequestResult>;
+    private listMembers;
+    private currentUserIds;
     private get;
+    private send;
     private getAll;
 }

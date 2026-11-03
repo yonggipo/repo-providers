@@ -35,4 +35,30 @@ export interface RepoProvider {
 
   // git clone 과 fetch 에 넘길 인증 환경변수
   gitAuthEnv(): NodeJS.ProcessEnv;
+
+  // source 브랜치를 destination 브랜치로 합치는 PR 을 연다
+  // 같은 source 브랜치의 열린 PR 이 있으면 새로 만들지 않고 그 PR 의 제목, 본문, 리뷰어를 바꾼다
+  openPullRequest(request: PullRequestRequest): Promise<PullRequestResult>;
+}
+
+// PR 을 열 때 넘기는 값
+export interface PullRequestRequest {
+  // `워크스페이스/레포`
+  repo: string;
+  source: string;
+  destination: string;
+  title: string;
+  description: string;
+  // 리뷰어로 넣을 사람, 서비스의 사용자 ID 나 닉네임, 표시 이름
+  reviewers: string[];
+}
+
+// 연 PR
+export interface PullRequestResult {
+  id: number;
+  url: string;
+  // 이미 열린 PR 을 고쳤으면 false
+  created: boolean;
+  // PR 을 여는 계정은 리뷰어가 될 수 없어 뺀 이름
+  skippedReviewers: string[];
 }
