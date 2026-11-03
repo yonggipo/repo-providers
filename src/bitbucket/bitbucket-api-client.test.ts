@@ -62,7 +62,7 @@ test("401 응답은 상태 코드를 담은 BitbucketApiError 로 던진다", as
 // MARK: - PR
 
 const PRS = `${API}/repositories/team/docs/pullrequests`;
-const openQuery = `${PRS}?q=${encodeURIComponent('source.branch.name="api-doc-cli/update" AND state="OPEN"')}`;
+const openQuery = `${PRS}?q=${encodeURIComponent('source.branch.name="docs/update" AND state="OPEN"')}`;
 const members = {
   values: [
     { user: { uuid: "{me}", nickname: "me" } },
@@ -71,7 +71,7 @@ const members = {
 };
 const prRequest = {
   repo: "team/docs",
-  source: "api-doc-cli/update",
+  source: "docs/update",
   destination: "main",
   title: "제목",
   description: "본문",
@@ -112,7 +112,7 @@ test("열린 PR 이 없으면 리뷰어를 uuid 로 바꿔 새 PR 을 만들고,
   const sent = await post.json();
   assert.deepEqual(sent.reviewers, [{ uuid: "{kim}" }]);
   assert.equal(sent.close_source_branch, true);
-  assert.equal(sent.source.branch.name, "api-doc-cli/update");
+  assert.equal(sent.source.branch.name, "docs/update");
   assert.equal(sent.destination.branch.name, "main");
 });
 
