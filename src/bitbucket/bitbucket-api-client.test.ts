@@ -29,6 +29,19 @@ test("API 요청에 이메일과 토큰으로 Basic 인증 헤더를 붙인다",
   assert.equal(seen[0]!.headers.get("authorization"), expected);
 });
 
+test("이메일 없는 접근 토큰은 Bearer 헤더로 보내고 git 에는 x-token-auth 로 넘긴다", async () => {
+  const seen: Request[] = [];
+  const client = new BitbucketApiClient(
+    { token: "secret" },
+    fakeFetch({ [`${API}/user`]: { body: { display_name: "봇" } } }, seen),
+  );
+
+  assert.equal(await client.currentUserName(), "봇");
+  assert.equal(seen[0]!.headers.get("authorization"), "Bearer secret");
+  const basic = Buffer.from("x-token-auth:secret").toString("base64");
+  assert.equal(client.gitAuthEnv().GIT_CONFIG_VALUE_0, `Authorization: Basic ${basic}`);
+});
+
 test("워크스페이스 목록은 next 링크를 따라 모든 페이지를 모아 가나다순으로 준다", async () => {
   const first = `${API}/user/workspaces?pagelen=100`;
   const second = `${API}/user/workspaces?pagelen=100&page=2`;

@@ -4,9 +4,10 @@ const KEYCHAIN_ACCOUNT = "bitbucket";
 // 사용자가 다른 도구용으로 저장해 둔 Bitbucket 토큰 항목, 계정 이름이 이메일이다
 export const SHARED_TOKEN_SERVICE = "bitbucket-api-token";
 
-// Bitbucket 연동에 필요한 값, API 는 이메일과 토큰을 함께 쓴다
+// Bitbucket 연동에 필요한 값, 계정 API 토큰은 이메일과 함께 쓰고
+// 저장소나 작업 공간에 묶인 접근 토큰(access token)은 이메일 없이 토큰만 쓴다
 export interface BitbucketCredentials {
-  email: string;
+  email?: string;
   token: string;
 }
 

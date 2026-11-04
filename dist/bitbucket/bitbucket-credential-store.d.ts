@@ -1,6 +1,6 @@
 export declare const SHARED_TOKEN_SERVICE = "bitbucket-api-token";
 export interface BitbucketCredentials {
-    email: string;
+    email?: string;
     token: string;
 }
 export declare function loadBitbucketCredentials(appService: string): Promise<BitbucketCredentials | null>;

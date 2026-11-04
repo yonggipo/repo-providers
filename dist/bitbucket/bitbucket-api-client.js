@@ -1,5 +1,5 @@
 import { BitbucketApiError } from "./bitbucket-api-error.js";
-import { buildBitbucketGitAuthEnv } from "./bitbucket-git-auth.js";
+import { ACCESS_TOKEN_GIT_USERNAME, buildBitbucketGitAuthEnv } from "./bitbucket-git-auth.js";
 import { toRepo } from "./bitbucket-repo-mapper.js";
 import { isUserId, resolveReviewers } from "./bitbucket-reviewer-resolver.js";
 const API = "https://api.bitbucket.org/2.0";
@@ -36,7 +36,8 @@ export class BitbucketApiClient {
     }
     // git 은 API 와 다른 사용자 이름을 요구해서 따로 만든다
     gitAuthEnv() {
-        return buildBitbucketGitAuthEnv(this.credentials.token);
+        const { email, token } = this.credentials;
+        return email ? buildBitbucketGitAuthEnv(token) : buildBitbucketGitAuthEnv(token, ACCESS_TOKEN_GIT_USERNAME);
     }
     // MARK: - PR
     // 리뷰어는 PR 을 보내기 전에 모두 사용자 ID 로 바꿔, 하나라도 못 찾으면 PR 을 건드리지 않는다
@@ -87,14 +88,14 @@ export class BitbucketApiClient {
         }
     }
     // MARK: - 요청
-    // API 는 Atlassian 계정 이메일과 토큰으로 Basic 인증한다
     async get(url) {
         return this.send("GET", url);
     }
+    // 계정 API 토큰은 이메일과 토큰으로 Basic 인증하고, 접근 토큰은 Bearer 로 보낸다
     async send(method, url, body) {
         const { email, token } = this.credentials;
         const headers = {
-            Authorization: "Basic " + Buffer.from(`${email}:${token}`).toString("base64"),
+            Authorization: email ? "Basic " + Buffer.from(`${email}:${token}`).toString("base64") : `Bearer ${token}`,
             Accept: "application/json",
         };
         if (body !== undefined)
