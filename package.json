@@ -1,6 +1,6 @@
 {
   "name": "@yonggipo/repo-providers",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "저장소 서비스(Bitbucket, GitHub) 연동을 여러 도구가 함께 쓰는 패키지",
   "type": "module",
